@@ -192,8 +192,8 @@ The plugin uses WordPress options table for all data storage:
 - `kipdev_optimizer_page_load_time` - Last measured page load time
 - `kipdev_optimizer_last_scan` - Last performance scan results
 - `kipdev_optimizer_progress` - Current optimization progress
-- `kipdev_optimizer_history` - Historical optimization data (last 30 entries)
-- `kipdev_optimizer_video_{hash}` - Individual video metadata
+- `kipdev_optimizer_history` - Historical optimization data (last 30 entries, auto-pruned using array_slice)
+- `kipdev_optimizer_video_{hash}` - Individual video metadata (MD5 hash of file path)
 
 ## WordPress Integration
 
@@ -203,12 +203,11 @@ The plugin uses WordPress options table for all data storage:
 - `admin_enqueue_scripts` - Enqueue admin assets
 - `admin_menu` - Register admin pages
 - `init` - Initialize cache manager
-- `wp_handle_upload` - Process uploads for optimization
 - `send_headers` - Add cache headers
 - `wp_ajax_*` - Handle AJAX requests
 
 **Filters:**
-- `wp_handle_upload` - Filter uploaded files
+- `wp_handle_upload` - Filter uploaded files for optimization
 - `style_loader_tag` - Modify CSS tags
 - `script_loader_tag` - Modify JS tags
 - `the_content` - Add lazy loading to content
