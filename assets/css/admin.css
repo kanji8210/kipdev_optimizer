@@ -1,0 +1,273 @@
+/* KipDev Optimizer Admin Styles */
+
+.kipdev-optimizer-wrap {
+    background: #fff;
+    padding: 20px;
+    margin: 20px 0;
+}
+
+/* Dashboard Grid */
+.kipdev-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+    margin: 30px 0;
+}
+
+.kipdev-stat-card {
+    background: #f8f9fa;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 20px;
+    display: flex;
+    align-items: flex-start;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.kipdev-stat-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.kipdev-stat-icon {
+    font-size: 48px;
+    margin-right: 15px;
+    color: #2271b1;
+}
+
+.kipdev-stat-icon .dashicons {
+    width: 48px;
+    height: 48px;
+    font-size: 48px;
+}
+
+.kipdev-stat-content {
+    flex: 1;
+}
+
+.kipdev-stat-content h3 {
+    margin: 0 0 10px 0;
+    font-size: 14px;
+    color: #666;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.kipdev-stat-value {
+    font-size: 32px;
+    font-weight: bold;
+    margin: 0;
+    color: #1d2327;
+}
+
+.kipdev-stat-label {
+    margin: 5px 0 0 0;
+    font-size: 13px;
+    color: #666;
+}
+
+/* Status Badges */
+.status-excellent {
+    color: #00a32a;
+    font-weight: bold;
+}
+
+.status-good {
+    color: #007cba;
+    font-weight: bold;
+}
+
+.status-needs-improvement {
+    color: #d63638;
+    font-weight: bold;
+}
+
+.status-enabled {
+    color: #00a32a;
+    font-weight: bold;
+}
+
+.status-disabled {
+    color: #d63638;
+    font-weight: bold;
+}
+
+.status-completed {
+    color: #00a32a;
+}
+
+.status-in_progress {
+    color: #007cba;
+}
+
+.status-failed {
+    color: #d63638;
+}
+
+/* Actions Section */
+.kipdev-actions-section {
+    margin: 40px 0;
+    padding: 20px;
+    background: #f0f6fc;
+    border-radius: 8px;
+}
+
+.kipdev-actions-section h2 {
+    margin-top: 0;
+}
+
+.kipdev-action-buttons {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+/* Info Section */
+.kipdev-info-section {
+    margin: 40px 0;
+    padding: 20px;
+    background: #f8f9fa;
+    border-left: 4px solid #2271b1;
+    border-radius: 4px;
+}
+
+.kipdev-info-section h2 {
+    margin-top: 0;
+}
+
+/* Controls Sections */
+.kipdev-control-section {
+    margin: 30px 0;
+    padding: 20px;
+    background: #f8f9fa;
+    border-radius: 8px;
+}
+
+.kipdev-control-section h2 {
+    margin-top: 0;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #ddd;
+}
+
+.kipdev-control-section .form-table {
+    margin-top: 20px;
+}
+
+/* Range Slider */
+#image-quality-slider {
+    width: 300px;
+    vertical-align: middle;
+}
+
+#image-quality-value {
+    display: inline-block;
+    margin-left: 10px;
+    font-weight: bold;
+}
+
+/* Results Display */
+.kipdev-results-header {
+    margin-bottom: 30px;
+    padding-bottom: 20px;
+    border-bottom: 2px solid #ddd;
+}
+
+.kipdev-results-summary {
+    margin: 30px 0;
+    padding: 20px;
+    background: #f0f6fc;
+    border-radius: 8px;
+}
+
+.kipdev-summary-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+    margin-top: 15px;
+}
+
+.kipdev-summary-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.kipdev-summary-item .dashicons {
+    color: #2271b1;
+    font-size: 24px;
+    width: 24px;
+    height: 24px;
+}
+
+.kipdev-results-metrics,
+.kipdev-results-recommendations,
+.kipdev-results-progress {
+    margin: 30px 0;
+}
+
+.kipdev-results-metrics table,
+.kipdev-results-progress table {
+    margin-top: 15px;
+}
+
+.kipdev-results-metrics td,
+.kipdev-results-progress td {
+    padding: 12px;
+}
+
+.kipdev-results-recommendations {
+    margin-top: 20px;
+}
+
+.kipdev-results-recommendations .notice {
+    margin: 10px 0;
+}
+
+/* Spinner */
+.spinner {
+    float: none;
+    margin: 0 10px;
+    display: none;
+}
+
+.spinner.is-active {
+    display: inline-block;
+}
+
+/* Result Messages */
+.kipdev-result-message {
+    margin-top: 10px;
+    padding: 10px;
+    border-radius: 4px;
+}
+
+.kipdev-result-success {
+    background: #d4edda;
+    color: #155724;
+    border: 1px solid #c3e6cb;
+}
+
+.kipdev-result-error {
+    background: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+}
+
+/* Responsive Design */
+@media (max-width: 782px) {
+    .kipdev-stats-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .kipdev-stat-value {
+        font-size: 24px;
+    }
+
+    .kipdev-action-buttons {
+        flex-direction: column;
+    }
+
+    .kipdev-action-buttons .button {
+        width: 100%;
+    }
+}
