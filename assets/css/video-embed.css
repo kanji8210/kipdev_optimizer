@@ -1,0 +1,261 @@
+/* KipDev Advanced Video Embed Styles */
+
+/* Container */
+.kipdev-video-container {
+    position: relative;
+    margin: 20px 0;
+}
+
+/* Wrapper - handles aspect ratio */
+.kipdev-video-wrapper {
+    position: relative;
+    width: 100%;
+    height: 0;
+    overflow: hidden;
+    background: #000;
+    border-radius: 8px;
+}
+
+/* Default aspect ratios */
+.kipdev-video-wrapper.kipdev-aspect-16-9 {
+    padding-bottom: 56.25%; /* 16:9 */
+}
+
+.kipdev-video-wrapper.kipdev-aspect-4-3 {
+    padding-bottom: 75%; /* 4:3 */
+}
+
+.kipdev-video-wrapper.kipdev-aspect-21-9 {
+    padding-bottom: 42.857%; /* 21:9 */
+}
+
+.kipdev-video-wrapper.kipdev-aspect-1-1 {
+    padding-bottom: 100%; /* 1:1 Square */
+}
+
+/* Alignment */
+.kipdev-video-wrapper.kipdev-align-left {
+    margin-left: 0;
+    margin-right: auto;
+}
+
+.kipdev-video-wrapper.kipdev-align-center {
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.kipdev-video-wrapper.kipdev-align-right {
+    margin-left: auto;
+    margin-right: 0;
+}
+
+/* Iframe */
+.kipdev-video-iframe {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    border: none;
+    border-radius: 8px;
+}
+
+/* Object fit options */
+.kipdev-video-wrapper.kipdev-fit-cover .kipdev-video-iframe {
+    object-fit: cover;
+}
+
+.kipdev-video-wrapper.kipdev-fit-contain .kipdev-video-iframe {
+    object-fit: contain;
+}
+
+.kipdev-video-wrapper.kipdev-fit-fill .kipdev-video-iframe {
+    object-fit: fill;
+}
+
+/* Animations */
+.kipdev-video-animation {
+    opacity: 0;
+    animation-fill-mode: forwards;
+    animation-timing-function: ease-out;
+}
+
+/* Fade In */
+@keyframes kipdev-fade-in {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+.kipdev-animation-fade-in {
+    animation-name: kipdev-fade-in;
+}
+
+/* Slide Up */
+@keyframes kipdev-slide-up {
+    from {
+        opacity: 0;
+        transform: translateY(50px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.kipdev-animation-slide-up {
+    animation-name: kipdev-slide-up;
+}
+
+/* Slide Down */
+@keyframes kipdev-slide-down {
+    from {
+        opacity: 0;
+        transform: translateY(-50px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.kipdev-animation-slide-down {
+    animation-name: kipdev-slide-down;
+}
+
+/* Slide Left */
+@keyframes kipdev-slide-left {
+    from {
+        opacity: 0;
+        transform: translateX(50px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+.kipdev-animation-slide-left {
+    animation-name: kipdev-slide-left;
+}
+
+/* Slide Right */
+@keyframes kipdev-slide-right {
+    from {
+        opacity: 0;
+        transform: translateX(-50px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+.kipdev-animation-slide-right {
+    animation-name: kipdev-slide-right;
+}
+
+/* Zoom In */
+@keyframes kipdev-zoom-in {
+    from {
+        opacity: 0;
+        transform: scale(0.8);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+.kipdev-animation-zoom-in {
+    animation-name: kipdev-zoom-in;
+}
+
+/* Zoom Out */
+@keyframes kipdev-zoom-out {
+    from {
+        opacity: 0;
+        transform: scale(1.2);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+.kipdev-animation-zoom-out {
+    animation-name: kipdev-zoom-out;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .kipdev-video-container {
+        margin: 15px 0;
+    }
+    
+    .kipdev-video-wrapper {
+        border-radius: 6px;
+    }
+    
+    .kipdev-video-iframe {
+        border-radius: 6px;
+    }
+}
+
+@media (max-width: 480px) {
+    .kipdev-video-container {
+        margin: 10px 0;
+    }
+    
+    .kipdev-video-wrapper {
+        border-radius: 4px;
+    }
+    
+    .kipdev-video-iframe {
+        border-radius: 4px;
+    }
+}
+
+/* Error state */
+.kipdev-video-error {
+    padding: 20px;
+    background: #f8d7da;
+    border: 1px solid #f5c6cb;
+    color: #721c24;
+    border-radius: 4px;
+    text-align: center;
+}
+
+/* Loading state */
+.kipdev-video-loading {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: #fff;
+    font-size: 18px;
+}
+
+/* Accessibility */
+.kipdev-video-iframe:focus {
+    outline: 2px solid #2271b1;
+    outline-offset: 2px;
+}
+
+/* Print styles */
+@media print {
+    .kipdev-video-container {
+        page-break-inside: avoid;
+    }
+    
+    .kipdev-video-wrapper::after {
+        content: "Video: " attr(data-video-id);
+        display: block;
+        padding: 20px;
+        background: #f0f0f0;
+        text-align: center;
+    }
+}

@@ -94,6 +94,13 @@ class Kipdev_Admin {
                             </td>
                         </tr>
                         <tr>
+                            <th><?php esc_html_e( 'Optimize GIF images', 'kipdev-optimizer' ); ?></th>
+                            <td>
+                                <input type="checkbox" name="optimize_gifs" value="1" <?php checked( $opts['optimize_gifs'], 1 ); ?>>
+                                <p class="description"><?php esc_html_e( 'Convert static GIFs to WebP format (animated GIFs are preserved)', 'kipdev-optimizer' ); ?></p>
+                            </td>
+                        </tr>
+                        <tr>
                             <th><?php esc_html_e( 'Minify HTML output', 'kipdev-optimizer' ); ?></th>
                             <td>
                                 <input type="checkbox" name="minify_html" value="1" <?php checked( $opts['minify_html'], 1 ); ?>>
@@ -140,11 +147,11 @@ class Kipdev_Admin {
             </div>
 
             <div id="converter" class="kipdev-tab-panel" style="display:none">
-                <h3><?php esc_html_e( 'PNG to WebP Converter', 'kipdev-optimizer' ); ?></h3>
-                <p><?php esc_html_e( 'Convert your PNG images to WebP format for better performance. WebP images are 30-40% smaller while maintaining quality and transparency.', 'kipdev-optimizer' ); ?></p>
+                <h3><?php esc_html_e( 'Image to WebP Converter', 'kipdev-optimizer' ); ?></h3>
+                <p><?php esc_html_e( 'Convert your PNG and static GIF images to WebP format for better performance. WebP images are 30-40% smaller while maintaining quality and transparency.', 'kipdev-optimizer' ); ?></p>
                 
                 <div class="converter-actions">
-                    <button id="kipdev-load-images" class="button button-primary"><?php esc_html_e( 'Load PNG Images', 'kipdev-optimizer' ); ?></button>
+                    <button id="kipdev-load-images" class="button button-primary"><?php esc_html_e( 'Load Images (PNG & GIF)', 'kipdev-optimizer' ); ?></button>
                     <button id="kipdev-convert-selected" class="button button-secondary" style="display:none;"><?php esc_html_e( 'Convert Selected to WebP', 'kipdev-optimizer' ); ?></button>
                     <button id="kipdev-convert-all" class="button button-secondary" style="display:none;"><?php esc_html_e( 'Convert All to WebP', 'kipdev-optimizer' ); ?></button>
                     <span id="conversion-status" style="margin-left: 15px; font-weight: 500;"></span>
@@ -158,7 +165,7 @@ class Kipdev_Admin {
                 </div>
                 
                 <div id="images-container" style="margin-top: 20px;">
-                    <p style="color: #666; font-style: italic;"><?php esc_html_e( 'Click "Load PNG Images" to see available images.', 'kipdev-optimizer' ); ?></p>
+                    <p style="color: #666; font-style: italic;"><?php esc_html_e( 'Click "Load Images" to see available PNG and GIF images.', 'kipdev-optimizer' ); ?></p>
                 </div>
             </div>
 
@@ -417,15 +424,15 @@ class Kipdev_Admin {
     }
     
     /**
-     * Get all PNG images from media library
+     * Get all PNG and GIF images from media library
      */
     private function get_png_images() {
         global $wpdb;
         
-        $query = "SELECT ID, post_title, post_date 
+        $query = "SELECT ID, post_title, post_date, post_mime_type 
                   FROM {$wpdb->posts} 
                   WHERE post_type = 'attachment' 
-                  AND post_mime_type = 'image/png' 
+                  AND post_mime_type IN ('image/png', 'image/gif') 
                   ORDER BY post_date DESC 
                   LIMIT 100";
         
@@ -439,7 +446,8 @@ class Kipdev_Admin {
             }
             
             $file_size = filesize( $file );
-            $webp_file = preg_replace( '/\.png$/i', '.webp', $file );
+            $extension = strtolower( pathinfo( $file, PATHINFO_EXTENSION ) );
+            $webp_file = preg_replace( '/\.(png|gif)$/i', '.webp', $file );
             $has_webp = file_exists( $webp_file );
             $webp_size = $has_webp ? filesize( $webp_file ) : 0;
             
@@ -450,6 +458,7 @@ class Kipdev_Admin {
                 'thumb' => wp_get_attachment_image_url( $attachment->ID, 'thumbnail' ),
                 'file_size' => size_format( $file_size, 2 ),
                 'file_size_bytes' => $file_size,
+                'file_type' => strtoupper( $extension ),
                 'has_webp' => $has_webp,
                 'webp_size' => $has_webp ? size_format( $webp_size, 2 ) : '',
                 'webp_size_bytes' => $webp_size,
@@ -478,15 +487,33 @@ class Kipdev_Admin {
         }
         
         $mime = get_post_mime_type( $attachment_id );
-        if ( $mime !== 'image/png' ) {
+        if ( ! in_array( $mime, array( 'image/png', 'image/gif' ) ) ) {
             return array(
                 'success' => false,
-                'message' => 'Not a PNG file',
+                'message' => 'Not a PNG or GIF file',
             );
         }
         
+        // Check if GIF is animated
+        if ( $mime === 'image/gif' ) {
+            require_once KIPDEV_OPT_PLUGIN_DIR . 'includes/engine/class-image-optimizer.php';
+            $optimizer = \Kipdev\Optimizer\Image_Optimizer::init();
+            
+            // Use reflection to access private method
+            $reflection = new \ReflectionClass( $optimizer );
+            $method = $reflection->getMethod( 'is_animated_gif' );
+            $method->setAccessible( true );
+            
+            if ( $method->invoke( $optimizer, $file ) ) {
+                return array(
+                    'success' => false,
+                    'message' => 'Animated GIFs are not converted',
+                );
+            }
+        }
+        
         // Check if WebP already exists
-        $webp_file = preg_replace( '/\.png$/i', '.webp', $file );
+        $webp_file = preg_replace( '/\.(png|gif)$/i', '.webp', $file );
         if ( file_exists( $webp_file ) ) {
             $original_size = filesize( $file );
             $webp_size = filesize( $webp_file );
@@ -499,12 +526,17 @@ class Kipdev_Admin {
             );
         }
         
-        // Load image
-        $img = @imagecreatefrompng( $file );
+        // Load image based on type
+        if ( $mime === 'image/png' ) {
+            $img = @imagecreatefrompng( $file );
+        } else {
+            $img = @imagecreatefromgif( $file );
+        }
+        
         if ( ! $img ) {
             return array(
                 'success' => false,
-                'message' => 'Failed to load PNG',
+                'message' => 'Failed to load image',
             );
         }
         

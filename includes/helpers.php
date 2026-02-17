@@ -14,6 +14,7 @@ function get_options() {
         'defer_js'              => 1,
         'generate_webp'         => 1,
         'serve_webp'            => 1,  // Automatically serve WebP to supporting browsers
+        'optimize_gifs'         => 1,  // Convert static GIFs to WebP
         'jetpack_compatibility' => 1,  // Auto-detect and defer to Jetpack
     );
     $opts = get_option( 'kipdev_opt_options', array() );
@@ -42,6 +43,9 @@ function update_options( $data ) {
     }
     if ( isset( $data['serve_webp'] ) ) {
         $allowed['serve_webp'] = intval( $data['serve_webp'] ) ? 1 : 0;
+    }
+    if ( isset( $data['optimize_gifs'] ) ) {
+        $allowed['optimize_gifs'] = intval( $data['optimize_gifs'] ) ? 1 : 0;
     }
     if ( isset( $data['jetpack_compatibility'] ) ) {
         $allowed['jetpack_compatibility'] = intval( $data['jetpack_compatibility'] ) ? 1 : 0;

@@ -147,8 +147,35 @@ class Image_Optimizer {
                     imagedestroy( $img );
                 }
             } elseif ( 'image/gif' === $mime ) {
-                // Leave animated GIFs as is
-                return false;
+                $optimize_gifs = isset( $opts['optimize_gifs'] ) ? intval( $opts['optimize_gifs'] ) : 1;
+                
+                if ( ! $optimize_gifs ) {
+                    $this->log( "Skipping GIF (optimization disabled): $file" );
+                    return false;
+                }
+                
+                // Check if GIF is animated
+                $is_animated = $this->is_animated_gif( $file );
+                
+                if ( $is_animated ) {
+                    $this->log( "Skipping animated GIF: $file" );
+                    return false;
+                }
+                
+                // Process static GIF
+                $img = @imagecreatefromgif( $file );
+                if ( $img ) {
+                    // Convert static GIF to WebP for better compression
+                    if ( $generate_webp && function_exists( 'imagewebp' ) ) {
+                        $webp_file = preg_replace( '/\.gif$/i', '.webp', $file );
+                        if ( @imagewebp( $img, $webp_file, $quality ) ) {
+                            $this->log( "Converted static GIF to WebP: $webp_file" );
+                            $optimized = true;
+                        }
+                    }
+                    
+                    imagedestroy( $img );
+                }
             }
             
             if ( $optimized ) {
@@ -186,6 +213,44 @@ class Image_Optimizer {
                 $value *= 1024;
         }
         return $value;
+    }
+    
+    /**
+     * Check if GIF is animated (contains multiple frames)
+     */
+    private function is_animated_gif( $file ) {
+        if ( ! file_exists( $file ) ) {
+            return false;
+        }
+        
+        $file_contents = @file_get_contents( $file );
+        if ( ! $file_contents ) {
+            return false;
+        }
+        
+        // Count the number of frames
+        // Animated GIFs have multiple image descriptor blocks (0x2C)
+        $str_loc = 0;
+        $count = 0;
+        
+        while ( $count < 2 ) {
+            $where1 = strpos( $file_contents, "\x00\x21\xF9\x04", $str_loc );
+            if ( $where1 === false ) {
+                break;
+            }
+            $str_loc = $where1 + 1;
+            $where2 = strpos( $file_contents, "\x00\x2C", $str_loc );
+            if ( $where2 === false ) {
+                break;
+            }
+            if ( $where1 + 8 === $where2 ) {
+                $count++;
+            }
+            $str_loc = $where2 + 1;
+        }
+        
+        // If count >= 2, it's animated
+        return $count >= 2;
     }
 
     protected function log( $msg, $level = 'info' ) {
@@ -227,8 +292,8 @@ class Image_Optimizer {
             return $content;
         }
         
-        // Find all image URLs in content
-        $pattern = '/<img([^>]+)src=["\']([^"\']+\.(png|jpe?g))["\']([^>]*)>/i';
+        // Find all image URLs in content (PNG, JPEG, GIF)
+        $pattern = '/<img([^>]+)src=["\']([^"\']+\.(png|jpe?g|gif))["\']([^>]*)>/i';
         
         $content = preg_replace_callback( $pattern, function( $matches ) {
             $full_match = $matches[0];
@@ -256,7 +321,7 @@ class Image_Optimizer {
             
             foreach ( $sources as $source ) {
                 $source = trim( $source );
-                if ( preg_match( '/^(.+\.(png|jpe?g))\s+(.+)$/i', $source, $src_match ) ) {
+                if ( preg_match( '/^(.+\.(png|jpe?g|gif))\s+(.+)$/i', $source, $src_match ) ) {
                     $url = trim( $src_match[1] );
                     $descriptor = trim( $src_match[3] );
                     
@@ -295,11 +360,11 @@ class Image_Optimizer {
         $file_path = $upload_dir['basedir'] . $relative_path;
         
         // Get WebP path
-        $webp_path = preg_replace( '/\.(png|jpe?g)$/i', '.webp', $file_path );
+        $webp_path = preg_replace( '/\.(png|jpe?g|gif)$/i', '.webp', $file_path );
         
         // Check if WebP file exists
         if ( file_exists( $webp_path ) ) {
-            $webp_url = preg_replace( '/\.(png|jpe?g)$/i', '.webp', $img_url );
+            $webp_url = preg_replace( '/\.(png|jpe?g|gif)$/i', '.webp', $img_url );
             return $webp_url;
         }
         

@@ -44,6 +44,20 @@ wp kipdev optimize-db
 wp kipdev scan
 ```
 
+### WPBakery Page Builder Integration
+**NEW!** Seamlessly extends WPBakery Page Builder with advanced elements:
+
+- **Advanced Video Embed**: 
+  - YouTube & Vimeo support with privacy mode
+  - Autoplay, mute, loop controls
+  - 8 entrance animations (fade, slide, zoom)
+  - Responsive design with multiple aspect ratios
+  - Custom styling and CSS classes
+  - GDPR-compliant privacy mode
+  - Full documentation: `includes/integrations/wpbakery/README.md`
+
+*Note: Requires WPBakery Page Builder plugin (automatically detected)*
+
 ## Installation
 
 1. Upload the `kipdev_optimizer` folder to `/wp-content/plugins/`
@@ -186,7 +200,19 @@ For issues and feature requests, please visit the plugin repository.
 
 ## Changelog
 
-### Version 0.2.0 (Current)
+### Version 0.2.2 (Current)
+- ✅ Added WPBakery Page Builder integration
+- ✅ Added Advanced Video Embed element (YouTube & Vimeo)
+- ✅ Added GIF optimization support (static GIF to WebP)
+- ✅ Added animated GIF detection and preservation
+- ✅ Added automatic WebP serving to browsers
+- ✅ Added interactive PNG/GIF to WebP converter in admin
+- ✅ Added visual progress bars and metrics
+- ✅ Fixed PHP 8.2 compatibility issues
+- ✅ Fixed namespace issues with Jetpack integration
+- ✅ Enhanced admin UI with conversion statistics
+
+### Version 0.2.0
 - ✅ Added WebP generation support
 - ✅ Added Jetpack compatibility layer
 - ✅ Added lazy loading with Jetpack detection

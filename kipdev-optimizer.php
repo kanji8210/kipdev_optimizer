@@ -15,6 +15,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 define( 'KIPDEV_OPT_DIR', plugin_dir_path( __FILE__ ) );
 define( 'KIPDEV_OPT_URL', plugin_dir_url( __FILE__ ) );
+define( 'KIPDEV_OPT_PLUGIN_DIR', KIPDEV_OPT_DIR );
+define( 'KIPDEV_OPT_PLUGIN_URL', KIPDEV_OPT_URL );
 
 // Autoload simple loader
 require_once KIPDEV_OPT_DIR . 'includes/helpers.php';
@@ -24,6 +26,11 @@ require_once KIPDEV_OPT_DIR . 'includes/engine/class-video-processor.php';
 require_once KIPDEV_OPT_DIR . 'includes/engine/class-asset-minifier.php';
 require_once KIPDEV_OPT_DIR . 'includes/engine/class-cache-manager.php';
 require_once KIPDEV_OPT_DIR . 'includes/metrics/class-performance-scanner.php';
+
+// Load integrations
+if ( defined( 'WPB_VC_VERSION' ) ) {
+    require_once KIPDEV_OPT_DIR . 'includes/integrations/wpbakery/init.php';
+}
 
 // Activation / deactivation
 function kipdev_opt_activate() {
@@ -57,6 +64,11 @@ function kipdev_opt_init() {
     Kipdev\Optimizer\Cache_Manager::init();
     Kipdev\Metrics\Performance_Scanner::init();
     Kipdev\Admin\Kipdev_Admin::init();
+    
+    // Initialize WPBakery integration if available
+    if ( defined( 'WPB_VC_VERSION' ) ) {
+        Kipdev\Optimizer\Integrations\WPBakery\WPBakery_Integration::init();
+    }
 }
 add_action( 'plugins_loaded', 'kipdev_opt_init' );
 

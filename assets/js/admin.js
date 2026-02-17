@@ -92,7 +92,7 @@
                 nonce: KIPDEV_OPT.nonce, 
                 do: 'load_png_images' 
             }, function(r){
-                btn.prop('disabled', false).text('Reload PNG Images');
+                btn.prop('disabled', false).text('Reload Images');
                 
                 if ( r.success ) {
                     currentImages = r.data.images;
@@ -103,13 +103,13 @@
                     if (currentImages.length === 0) {
                         $('#kipdev-convert-selected').hide();
                         $('#kipdev-convert-all').hide();
-                        $('#conversion-status').html('<div class="no-images-notice">📁 No PNG images found in your media library.</div>');
+                        $('#conversion-status').html('<div class="no-images-notice">📁 No PNG or GIF images found in your media library.</div>');
                     } else {
                         $('#kipdev-convert-selected').show();
                         $('#kipdev-convert-all').show();
                         
                         var statusHtml = '<div class="images-found-notice">';
-                        statusHtml += '<strong>Found ' + r.data.total + ' PNG image' + (r.data.total !== 1 ? 's' : '') + '</strong>';
+                        statusHtml += '<strong>Found ' + r.data.total + ' image' + (r.data.total !== 1 ? 's' : '') + ' (PNG & GIF)</strong>';
                         
                         if (needsConversion > 0) {
                             statusHtml += ' • <span class="needs-conversion">' + needsConversion + ' need' + (needsConversion !== 1 ? '' : 's') + ' WebP conversion</span>';
@@ -133,9 +133,9 @@
             if (images.length === 0) {
                 html = '<div class="empty-state">';
                 html += '  <div class="empty-icon">🖼️</div>';
-                html += '  <h3>No PNG Images Found</h3>';
-                html += '  <p>Your media library doesn\'t contain any PNG images yet.</p>';
-                html += '  <p class="empty-hint">Upload some PNG images to start converting them to WebP format!</p>';
+                html += '  <h3>No Images Found</h3>';
+                html += '  <p>Your media library doesn\'t contain any PNG or GIF images yet.</p>';
+                html += '  <p class="empty-hint">Upload some PNG or GIF images to start converting them to WebP format!</p>';
                 html += '</div>';
             } else {
                 html = '<div class="image-grid">';
@@ -155,7 +155,7 @@
                     html += '  </div>';
                     html += '  <div class="image-info">';
                     html += '    <div class="image-title">' + img.title + '</div>';
-                    html += '    <div class="image-meta">PNG: ' + img.file_size + '</div>';
+                    html += '    <div class="image-meta"><strong>' + img.file_type + '</strong>: ' + img.file_size + '</div>';
                     html += '    <div class="image-status ' + statusClass + '">' + statusIcon + ' ' + statusText + savingsText + '</div>';
                     html += '    <div class="image-date">' + img.date + '</div>';
                     html += '  </div>';
@@ -198,7 +198,7 @@
                 return;
             }
             
-            if (!confirm('Convert ' + selectedImages.length + ' selected PNG image(s) to WebP?')) {
+            if (!confirm('Convert ' + selectedImages.length + ' selected image(s) to WebP?')) {
                 return;
             }
             
@@ -212,11 +212,11 @@
             var allIds = currentImages.filter(img => !img.has_webp).map(img => img.id);
             
             if (allIds.length === 0) {
-                alert('All PNG images already have WebP versions!');
+                alert('All images already have WebP versions!');
                 return;
             }
             
-            if (!confirm('Convert all ' + allIds.length + ' PNG images to WebP?')) {
+            if (!confirm('Convert all ' + allIds.length + ' image(s) to WebP?')) {
                 return;
             }
             
