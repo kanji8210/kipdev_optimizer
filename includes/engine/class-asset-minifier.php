@@ -21,8 +21,8 @@ class Asset_Minifier {
         
         $opts = \Kipdev\Optimizer\Helpers\get_options();
         
-        // Defer JavaScript if enabled
-        if ( ! empty( $opts['defer_js'] ) ) {
+        // Defer JavaScript if enabled (only on frontend, not admin)
+        if ( ! empty( $opts['defer_js'] ) && ! is_admin() ) {
             add_filter( 'script_loader_tag', array( $this, 'defer_scripts' ), 10, 2 );
         }
         
@@ -32,8 +32,10 @@ class Asset_Minifier {
             add_filter( 'post_thumbnail_html', array( $this, 'add_lazy_loading' ), 20 );
         }
         
-        // Add resource hints
-        add_action( 'wp_head', array( $this, 'add_resource_hints' ), 1 );
+        // Add resource hints (only on frontend)
+        if ( ! is_admin() ) {
+            add_action( 'wp_head', array( $this, 'add_resource_hints' ), 1 );
+        }
     }
     
     /**
