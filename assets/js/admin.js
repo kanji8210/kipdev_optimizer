@@ -1,0 +1,48 @@
+(function($){
+    $(function(){
+        $('.nav-tab').on('click', function(e){
+            e.preventDefault();
+            $('.nav-tab').removeClass('nav-tab-active');
+            $(this).addClass('nav-tab-active');
+            var href = $(this).attr('href');
+            $('.kipdev-tab-panel').hide();
+            $(href).show();
+        });
+
+        $('#kipdev-run-scan').on('click', function(e){
+            e.preventDefault();
+            var btn = $(this);
+            btn.prop('disabled', true).text('Scanning...');
+            $.post(KIPDEV_OPT.ajax_url, { action: 'kipdev_opt_action', nonce: KIPDEV_OPT.nonce, do: 'run_scan' }, function(r){
+                btn.prop('disabled', false).text('Run Performance Scan');
+                if ( r.success ) {
+                    alert('Scan complete: ' + r.data.load_time + 's');
+                    location.reload();
+                } else {
+                    alert('Scan failed');
+                }
+            });
+        });
+
+        $('#kipdev-clear-cache').on('click', function(e){
+            e.preventDefault();
+            if (!confirm('Clear optimizer cache and logs?')) return;
+            var btn = $(this);
+            btn.prop('disabled', true).text('Clearing...');
+            $.post(KIPDEV_OPT.ajax_url, { action: 'kipdev_opt_action', nonce: KIPDEV_OPT.nonce, do: 'clear_cache' }, function(r){
+                btn.prop('disabled', false).text('Clear Plugin Cache');
+                if ( r.success ) {
+                    alert('Cleared');
+                    location.reload();
+                } else {
+                    alert('Failed');
+                }
+            });
+        });
+
+        $('#kipdev-options-form').on('submit', function(e){
+            // simple post via fetch to same page — degrade to normal submit
+            // handle via normal POST to update options on server if implemented
+        });
+    });
+})(jQuery);
