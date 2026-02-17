@@ -13,6 +13,7 @@ function get_options() {
         'enable_page_cache'     => 0,  // Off by default to avoid conflicts
         'defer_js'              => 1,
         'generate_webp'         => 1,
+        'serve_webp'            => 1,  // Automatically serve WebP to supporting browsers
         'jetpack_compatibility' => 1,  // Auto-detect and defer to Jetpack
     );
     $opts = get_option( 'kipdev_opt_options', array() );
@@ -38,6 +39,9 @@ function update_options( $data ) {
     }
     if ( isset( $data['generate_webp'] ) ) {
         $allowed['generate_webp'] = intval( $data['generate_webp'] ) ? 1 : 0;
+    }
+    if ( isset( $data['serve_webp'] ) ) {
+        $allowed['serve_webp'] = intval( $data['serve_webp'] ) ? 1 : 0;
     }
     if ( isset( $data['jetpack_compatibility'] ) ) {
         $allowed['jetpack_compatibility'] = intval( $data['jetpack_compatibility'] ) ? 1 : 0;

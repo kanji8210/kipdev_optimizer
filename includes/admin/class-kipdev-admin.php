@@ -87,6 +87,13 @@ class Kipdev_Admin {
                             </td>
                         </tr>
                         <tr>
+                            <th><?php esc_html_e( 'Serve WebP to browsers', 'kipdev-optimizer' ); ?></th>
+                            <td>
+                                <input type="checkbox" name="serve_webp" value="1" <?php checked( $opts['serve_webp'], 1 ); ?>>
+                                <p class="description"><?php esc_html_e( 'Automatically serve WebP images to supporting browsers (Chrome, Firefox, Edge)', 'kipdev-optimizer' ); ?></p>
+                            </td>
+                        </tr>
+                        <tr>
                             <th><?php esc_html_e( 'Minify HTML output', 'kipdev-optimizer' ); ?></th>
                             <td>
                                 <input type="checkbox" name="minify_html" value="1" <?php checked( $opts['minify_html'], 1 ); ?>>

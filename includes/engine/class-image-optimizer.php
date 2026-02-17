@@ -23,6 +23,17 @@ class Image_Optimizer {
         } else {
             $this->log( 'Jetpack Image CDN detected - deferring image optimization to Jetpack', 'info' );
         }
+        
+        // Hook WebP serving if enabled and browser supports it
+        $opts = \Kipdev\Optimizer\Helpers\get_options();
+        $serve_webp = isset( $opts['serve_webp'] ) ? intval( $opts['serve_webp'] ) : 1;
+        
+        if ( $serve_webp && $this->browser_supports_webp() && ! is_admin() ) {
+            add_filter( 'the_content', array( $this, 'replace_images_with_webp' ), 10 );
+            add_filter( 'post_thumbnail_html', array( $this, 'replace_images_with_webp' ), 10 );
+            add_filter( 'wp_get_attachment_image', array( $this, 'replace_images_with_webp' ), 10 );
+            add_filter( 'wp_calculate_image_srcset', array( $this, 'add_webp_to_srcset' ), 10, 5 );
+        }
     }
     
     /**
@@ -196,5 +207,120 @@ class Image_Optimizer {
                 echo '<div class="notice notice-error"><p>KipDev Optimizer: ' . esc_html( $msg ) . '</p></div>';
             });
         }
+    }
+    
+    /**
+     * Check if browser supports WebP format
+     */
+    private function browser_supports_webp() {
+        if ( ! isset( $_SERVER['HTTP_ACCEPT'] ) ) {
+            return false;
+        }
+        return strpos( $_SERVER['HTTP_ACCEPT'], 'image/webp' ) !== false;
+    }
+    
+    /**
+     * Replace image URLs with WebP versions in HTML content
+     */
+    public function replace_images_with_webp( $content ) {
+        if ( ! $content ) {
+            return $content;
+        }
+        
+        // Find all image URLs in content
+        $pattern = '/<img([^>]+)src=["\']([^"\']+\.(png|jpe?g))["\']([^>]*)>/i';
+        
+        $content = preg_replace_callback( $pattern, function( $matches ) {
+            $full_match = $matches[0];
+            $before_src = $matches[1];
+            $img_url = $matches[2];
+            $extension = $matches[3];
+            $after_src = $matches[4];
+            
+            // Convert URL to file path
+            $webp_url = $this->get_webp_url( $img_url );
+            
+            if ( $webp_url ) {
+                // Replace the src with WebP version
+                return '<img' . $before_src . 'src="' . esc_url( $webp_url ) . '"' . $after_src . ' data-original-src="' . esc_url( $img_url ) . '">';
+            }
+            
+            return $full_match;
+        }, $content );
+        
+        // Also handle srcset attributes
+        $content = preg_replace_callback( '/srcset=["\']([^"\']+)["\']/i', function( $matches ) {
+            $srcset = $matches[1];
+            $sources = explode( ',', $srcset );
+            $new_sources = array();
+            
+            foreach ( $sources as $source ) {
+                $source = trim( $source );
+                if ( preg_match( '/^(.+\.(png|jpe?g))\s+(.+)$/i', $source, $src_match ) ) {
+                    $url = trim( $src_match[1] );
+                    $descriptor = trim( $src_match[3] );
+                    
+                    $webp_url = $this->get_webp_url( $url );
+                    if ( $webp_url ) {
+                        $new_sources[] = $webp_url . ' ' . $descriptor;
+                    } else {
+                        $new_sources[] = $source;
+                    }
+                } else {
+                    $new_sources[] = $source;
+                }
+            }
+            
+            return 'srcset="' . implode( ', ', $new_sources ) . '"';
+        }, $content );
+        
+        return $content;
+    }
+    
+    /**
+     * Get WebP URL if file exists
+     */
+    private function get_webp_url( $img_url ) {
+        // Convert URL to file path
+        $upload_dir = wp_upload_dir();
+        $base_url = $upload_dir['baseurl'];
+        
+        // Check if this is an upload URL
+        if ( strpos( $img_url, $base_url ) !== 0 ) {
+            return false;
+        }
+        
+        // Get file path
+        $relative_path = str_replace( $base_url, '', $img_url );
+        $file_path = $upload_dir['basedir'] . $relative_path;
+        
+        // Get WebP path
+        $webp_path = preg_replace( '/\.(png|jpe?g)$/i', '.webp', $file_path );
+        
+        // Check if WebP file exists
+        if ( file_exists( $webp_path ) ) {
+            $webp_url = preg_replace( '/\.(png|jpe?g)$/i', '.webp', $img_url );
+            return $webp_url;
+        }
+        
+        return false;
+    }
+    
+    /**
+     * Add WebP versions to srcset
+     */
+    public function add_webp_to_srcset( $sources, $size_array, $image_src, $image_meta, $attachment_id ) {
+        if ( empty( $sources ) ) {
+            return $sources;
+        }
+        
+        foreach ( $sources as $width => $source ) {
+            $webp_url = $this->get_webp_url( $source['url'] );
+            if ( $webp_url ) {
+                $sources[ $width ]['url'] = $webp_url;
+            }
+        }
+        
+        return $sources;
     }
 }
