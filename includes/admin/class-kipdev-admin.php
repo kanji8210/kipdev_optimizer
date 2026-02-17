@@ -40,8 +40,8 @@ class Kipdev_Admin {
         if ( strpos( $hook, 'kipdev-optimizer' ) === false ) {
             return;
         }
-        wp_enqueue_style( 'kipdev-opt-admin', KIPDEV_OPT_URL . 'assets/css/admin.css', array(), '0.1' );
-        wp_enqueue_script( 'kipdev-opt-admin', KIPDEV_OPT_URL . 'assets/js/admin.js', array( 'jquery' ), '0.1', true );
+        wp_enqueue_style( 'kipdev-opt-admin', KIPDEV_OPT_URL . 'assets/css/admin.css', array(), '0.2.2' );
+        wp_enqueue_script( 'kipdev-opt-admin', KIPDEV_OPT_URL . 'assets/js/admin.js', array( 'jquery' ), '0.2.2', true );
         wp_localize_script( 'kipdev-opt-admin', 'KIPDEV_OPT', array(
             'ajax_url' => admin_url( 'admin-ajax.php' ),
             'nonce'    => wp_create_nonce( 'kipdev_opt_nonce' ),
@@ -145,11 +145,57 @@ class Kipdev_Admin {
         $last = get_option( 'kipdev_last_scan', false );
         if ( $last ) {
             echo '<h4>' . esc_html__( 'Last Performance Scan', 'kipdev-optimizer' ) . '</h4>';
-            echo '<p>' . esc_html__( 'Scanned:', 'kipdev-optimizer' ) . ' ' . esc_html( date_i18n( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ), $last['timestamp'] ) ) . '</p>';
-            echo '<ul>';
-            echo '<li>' . esc_html__( 'Page load time (s):', 'kipdev-optimizer' ) . ' <strong>' . esc_html( $last['load_time'] ) . '</strong></li>';
-            echo '<li>' . esc_html__( 'Images optimized:', 'kipdev-optimizer' ) . ' <strong>' . esc_html( intval( $last['images'] ) ) . '</strong></li>';
-            echo '</ul>';
+            echo '<p style="color: #666; font-size: 13px;">' . esc_html__( 'Scanned:', 'kipdev-optimizer' ) . ' ' . esc_html( date_i18n( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ), $last['timestamp'] ) ) . '</p>';
+            
+            // Page Load Time with progress bar
+            $load_time = floatval( $last['load_time'] );
+            $load_score = $this->calculate_load_score( $load_time );
+            $load_color = $this->get_score_color( $load_score );
+            
+            echo '<div class="metric-item">';
+            echo '<div class="metric-header">';
+            echo '<span class="metric-label">' . esc_html__( 'Page Load Time', 'kipdev-optimizer' ) . '</span>';
+            echo '<span class="metric-value"><strong>' . esc_html( $load_time ) . 's</strong> <span class="metric-score" style="color: ' . esc_attr( $load_color ) . ';">' . esc_html( $load_score ) . '%</span></span>';
+            echo '</div>';
+            echo '<div class="progress-bar">';
+            echo '<div class="progress-fill" style="width: ' . esc_attr( $load_score ) . '%; background-color: ' . esc_attr( $load_color ) . ';"></div>';
+            echo '</div>';
+            echo '<p class="metric-hint">' . $this->get_load_hint( $load_time ) . '</p>';
+            echo '</div>';
+            
+            // Images Optimized with progress bar
+            $images_optimized = intval( $last['images'] );
+            $total_images = $this->get_total_images();
+            $image_score = $total_images > 0 ? min( 100, round( ( $images_optimized / $total_images ) * 100 ) ) : 0;
+            $image_color = $this->get_score_color( $image_score );
+            
+            echo '<div class="metric-item">';
+            echo '<div class="metric-header">';
+            echo '<span class="metric-label">' . esc_html__( 'Images Optimized', 'kipdev-optimizer' ) . '</span>';
+            echo '<span class="metric-value"><strong>' . esc_html( $images_optimized ) . '</strong> / ' . esc_html( $total_images ) . ' <span class="metric-score" style="color: ' . esc_attr( $image_color ) . ';">' . esc_html( $image_score ) . '%</span></span>';
+            echo '</div>';
+            echo '<div class="progress-bar">';
+            echo '<div class="progress-fill" style="width: ' . esc_attr( $image_score ) . '%; background-color: ' . esc_attr( $image_color ) . ';"></div>';
+            echo '</div>';
+            if ( $image_score < 100 && $total_images > $images_optimized ) {
+                echo '<p class="metric-hint">💡 ' . sprintf( esc_html__( '%d images pending optimization. Use WP-CLI: wp kipdev optimize-images', 'kipdev-optimizer' ), $total_images - $images_optimized ) . '</p>';
+            }
+            echo '</div>';
+            
+            // Overall Performance Score
+            $overall_score = round( ( $load_score + $image_score ) / 2 );
+            $overall_color = $this->get_score_color( $overall_score );
+            
+            echo '<div class="metric-item overall-score">';
+            echo '<div class="metric-header">';
+            echo '<span class="metric-label"><strong>' . esc_html__( 'Overall Performance Score', 'kipdev-optimizer' ) . '</strong></span>';
+            echo '<span class="metric-value"><strong style="font-size: 24px; color: ' . esc_attr( $overall_color ) . ';">' . esc_html( $overall_score ) . '%</strong></span>';
+            echo '</div>';
+            echo '<div class="progress-bar large">';
+            echo '<div class="progress-fill" style="width: ' . esc_attr( $overall_score ) . '%; background-color: ' . esc_attr( $overall_color ) . ';"></div>';
+            echo '</div>';
+            echo '</div>';
+            
         } else {
             echo '<h4>' . esc_html__( 'Performance Scan', 'kipdev-optimizer' ) . '</h4>';
             echo '<p>' . esc_html__( 'No scans yet. Run a scan to collect metrics.', 'kipdev-optimizer' ) . '</p>';
@@ -259,5 +305,71 @@ class Kipdev_Admin {
         update_options( $_POST );
         wp_redirect( admin_url( 'admin.php?page=kipdev-optimizer&updated=1' ) );
         exit;
+    }
+    
+    /**
+     * Calculate load time score (0-100, higher is better)
+     */
+    private function calculate_load_score( $load_time ) {
+        // Perfect: < 1s = 100%
+        // Good: 1-2s = 80-100%
+        // Average: 2-3s = 60-80%
+        // Poor: 3-5s = 40-60%
+        // Very Poor: > 5s = 0-40%
+        if ( $load_time < 1 ) {
+            return 100;
+        } elseif ( $load_time < 2 ) {
+            return 100 - ( ( $load_time - 1 ) * 20 );
+        } elseif ( $load_time < 3 ) {
+            return 80 - ( ( $load_time - 2 ) * 20 );
+        } elseif ( $load_time < 5 ) {
+            return 60 - ( ( $load_time - 3 ) * 10 );
+        } else {
+            return max( 0, 40 - ( ( $load_time - 5 ) * 8 ) );
+        }
+    }
+    
+    /**
+     * Get color based on score
+     */
+    private function get_score_color( $score ) {
+        if ( $score >= 80 ) {
+            return '#00a32a'; // Green - Good
+        } elseif ( $score >= 60 ) {
+            return '#dba617'; // Orange - Average
+        } else {
+            return '#d63638'; // Red - Poor
+        }
+    }
+    
+    /**
+     * Get hint text based on load time
+     */
+    private function get_load_hint( $load_time ) {
+        if ( $load_time < 1 ) {
+            return '✅ ' . esc_html__( 'Excellent! Your site loads very fast.', 'kipdev-optimizer' );
+        } elseif ( $load_time < 2 ) {
+            return '✅ ' . esc_html__( 'Good load time. Consider enabling page caching for further improvement.', 'kipdev-optimizer' );
+        } elseif ( $load_time < 3 ) {
+            return '⚠️ ' . esc_html__( 'Average load time. Enable page caching and defer JavaScript.', 'kipdev-optimizer' );
+        } else {
+            return '❌ ' . esc_html__( 'Slow load time. Enable all optimizations and consider a CDN.', 'kipdev-optimizer' );
+        }
+    }
+    
+    /**
+     * Get total images in media library
+     */
+    private function get_total_images() {
+        $count = wp_cache_get( 'kipdev_total_images', 'kipdev_optimizer' );
+        if ( false === $count ) {
+            $count = wp_count_posts( 'attachment' );
+            // Get image attachments only
+            global $wpdb;
+            $count = $wpdb->get_var( "SELECT COUNT(*) FROM {$wpdb->posts} WHERE post_type = 'attachment' AND post_mime_type LIKE 'image/%'" );
+            $count = intval( $count );
+            wp_cache_set( 'kipdev_total_images', $count, 'kipdev_optimizer', HOUR_IN_SECONDS );
+        }
+        return $count;
     }
 }

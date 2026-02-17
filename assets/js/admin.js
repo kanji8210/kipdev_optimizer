@@ -16,7 +16,22 @@
             $.post(KIPDEV_OPT.ajax_url, { action: 'kipdev_opt_action', nonce: KIPDEV_OPT.nonce, do: 'run_scan' }, function(r){
                 btn.prop('disabled', false).text('Run Performance Scan');
                 if ( r.success ) {
-                    alert('Scan complete: ' + r.data.load_time + 's');
+                    // Show success message with load time
+                    var loadTime = r.data.load_time || 0;
+                    var message = 'Scan complete: ' + loadTime + 's';
+                    
+                    // Add performance hint
+                    if (loadTime < 1) {
+                        message += '\n✅ Excellent performance!';
+                    } else if (loadTime < 2) {
+                        message += '\n✅ Good performance!';
+                    } else if (loadTime < 3) {
+                        message += '\n⚠️ Average performance';
+                    } else {
+                        message += '\n❌ Consider enabling more optimizations';
+                    }
+                    
+                    alert(message);
                     location.reload();
                 } else {
                     alert('Scan failed');

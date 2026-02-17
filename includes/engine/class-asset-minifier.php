@@ -42,11 +42,11 @@ class Asset_Minifier {
      * Check if Jetpack lazy loading is active
      */
     private function is_jetpack_lazy_loading_active() {
-        if ( ! class_exists( 'Jetpack' ) ) {
+        if ( ! class_exists( '\Jetpack' ) ) {
             return false;
         }
-        return method_exists( 'Jetpack', 'is_module_active' ) && 
-               Jetpack::is_module_active( 'lazy-images' );
+        return method_exists( '\Jetpack', 'is_module_active' ) && 
+               \Jetpack::is_module_active( 'lazy-images' );
     }
 
     public function maybe_start_buffer() {
@@ -166,8 +166,8 @@ class Asset_Minifier {
      */
     public function add_resource_hints() {
         // Preconnect to Jetpack CDN if active
-        if ( class_exists( 'Jetpack' ) && method_exists( 'Jetpack', 'is_module_active' ) ) {
-            if ( Jetpack::is_module_active( 'photon' ) || Jetpack::is_module_active( 'photon-cdn' ) ) {
+        if ( class_exists( '\Jetpack' ) && method_exists( '\Jetpack', 'is_module_active' ) ) {
+            if ( \Jetpack::is_module_active( 'photon' ) || \Jetpack::is_module_active( 'photon-cdn' ) ) {
                 echo '<link rel="preconnect" href="https://i0.wp.com" crossorigin>' . "\n";
                 echo '<link rel="preconnect" href="https://i1.wp.com" crossorigin>' . "\n";
                 echo '<link rel="preconnect" href="https://i2.wp.com" crossorigin>' . "\n";

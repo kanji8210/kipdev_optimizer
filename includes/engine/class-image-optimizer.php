@@ -29,12 +29,12 @@ class Image_Optimizer {
      * Check if Jetpack's image CDN (Photon) is active
      */
     private function is_jetpack_image_cdn_active() {
-        if ( ! class_exists( 'Jetpack' ) ) {
+        if ( ! class_exists( '\Jetpack' ) ) {
             return false;
         }
         // Check if Photon/Image CDN module is active
-        return method_exists( 'Jetpack', 'is_module_active' ) && 
-               ( Jetpack::is_module_active( 'photon' ) || Jetpack::is_module_active( 'photon-cdn' ) );
+        return method_exists( '\Jetpack', 'is_module_active' ) && 
+               ( \Jetpack::is_module_active( 'photon' ) || \Jetpack::is_module_active( 'photon-cdn' ) );
     }
 
     public function maybe_optimize_attachment( $post_id ) {

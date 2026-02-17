@@ -3,7 +3,7 @@
  * Plugin Name: KipDev Simple Optimizer
  * Plugin URI:  https://example.com/kipdev-optimizer
  * Description: Lightweight, high-quality performance plugin — image optimizer with WebP, asset minifier, page cache, database optimization, and Jetpack compatibility.
- * Version:     0.2.0
+ * Version:     0.2.2
  * Author:      KipDev
  * Text Domain: kipdev-optimizer
  * Domain Path: /languages

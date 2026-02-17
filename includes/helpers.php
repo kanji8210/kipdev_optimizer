@@ -63,7 +63,7 @@ function get_jetpack_status() {
     );
     
     // Check if Jetpack is active
-    if ( ! class_exists( 'Jetpack' ) ) {
+    if ( ! class_exists( '\Jetpack' ) ) {
         return $status;
     }
     
@@ -75,12 +75,12 @@ function get_jetpack_status() {
     }
     
     // Check active modules
-    if ( method_exists( 'Jetpack', 'get_active_modules' ) ) {
-        $status['modules'] = Jetpack::get_active_modules();
+    if ( method_exists( '\Jetpack', 'get_active_modules' ) ) {
+        $status['modules'] = \Jetpack::get_active_modules();
     }
     
     // Check specific features
-    if ( method_exists( 'Jetpack', 'is_module_active' ) ) {
+    if ( method_exists( '\Jetpack', 'is_module_active' ) ) {
         $features = array(
             'photon' => 'Image CDN (Photon)',
             'photon-cdn' => 'Image CDN (Photon)',
@@ -93,7 +93,7 @@ function get_jetpack_status() {
         );
         
         foreach ( $features as $module => $label ) {
-            if ( Jetpack::is_module_active( $module ) ) {
+            if ( \Jetpack::is_module_active( $module ) ) {
                 $status['features'][ $module ] = $label;
                 
                 // Check if it's a CDN feature
