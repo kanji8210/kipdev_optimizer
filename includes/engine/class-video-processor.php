@@ -26,7 +26,7 @@ class Video_Processor {
             return;
         }
         $mime = get_post_mime_type( $post_id );
-        if ( strpos( $mime, 'video/' ) !== 0 ) {
+        if ( ! $mime || strpos( $mime, 'video/' ) !== 0 ) {
             return;
         }
         // Placeholder for future video optimization

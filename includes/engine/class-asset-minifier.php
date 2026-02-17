@@ -65,13 +65,13 @@ class Asset_Minifier {
 
     public function minify_html( $html ) {
         // Lightweight minify: remove comments, collapse whitespace
-        if ( empty( $html ) || strlen( $html ) < 100 ) {
+        if ( ! is_string( $html ) || empty( $html ) || strlen( $html ) < 100 ) {
             return $html;
         }
         
         // Protect script and style blocks
         $protected_blocks = array();
-        $html = preg_replace_callback(
+        $result = preg_replace_callback(
             '/<(script|style)[^>]*>.*?<\/\1>/is',
             function( $matches ) use ( &$protected_blocks ) {
                 $placeholder = '___PROTECTED_BLOCK_' . count( $protected_blocks ) . '___';
@@ -80,18 +80,32 @@ class Asset_Minifier {
             },
             $html
         );
+        if ( $result !== null ) {
+            $html = $result;
+        }
         
         // Remove HTML comments (but keep IE conditional comments)
-        $html = preg_replace( '/<!--(?!\s*\[if)(?!<!)[^\[>].*?-->/s', '', $html );
+        $result = preg_replace( '/<!--(?!\s*\[if)(?!<!)[^\[>].*?-->/s', '', $html );
+        if ( $result !== null ) {
+            $html = $result;
+        }
         
         // Collapse multiple spaces (but not in pre tags)
-        $html = preg_replace( '/\s{2,}/', ' ', $html );
+        $result = preg_replace( '/\s{2,}/', ' ', $html );
+        if ( $result !== null ) {
+            $html = $result;
+        }
         
         // Remove spaces between tags (but be careful with inline elements)
-        $html = preg_replace( '/>\s+</', '><', $html );
+        $result = preg_replace( '/>\s+</', '><', $html );
+        if ( $result !== null ) {
+            $html = $result;
+        }
         
         // Restore protected blocks
-        $html = str_replace( array_keys( $protected_blocks ), array_values( $protected_blocks ), $html );
+        if ( ! empty( $protected_blocks ) && is_string( $html ) ) {
+            $html = str_replace( array_keys( $protected_blocks ), array_values( $protected_blocks ), $html );
+        }
         
         return $html;
     }
@@ -119,12 +133,12 @@ class Asset_Minifier {
      * Add lazy loading to images
      */
     public function add_lazy_loading( $content ) {
-        if ( is_admin() || empty( $content ) ) {
+        if ( is_admin() || ! is_string( $content ) || empty( $content ) ) {
             return $content;
         }
         
         // Add loading="lazy" to img tags that don't have it
-        $content = preg_replace_callback(
+        $result = preg_replace_callback(
             '/<img([^>]+?)\/?>/',
             function( $matches ) {
                 $img_tag = $matches[0];
@@ -139,6 +153,10 @@ class Asset_Minifier {
             },
             $content
         );
+        
+        if ( $result !== null ) {
+            $content = $result;
+        }
         
         return $content;
     }

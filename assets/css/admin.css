@@ -9,3 +9,13 @@
 .kipdev-results-list .level-error { background: #d63638; color: white; padding: 2px 6px; border-radius: 3px; font-size: 11px; }
 .kipdev-results-list .level-warning { background: #dba617; color: white; padding: 2px 6px; border-radius: 3px; font-size: 11px; }
 .kipdev-results-list .level-info { background: #2271b1; color: white; padding: 2px 6px; border-radius: 3px; font-size: 11px; }
+
+/* Jetpack integration styles */
+.jetpack-features { list-style: none; margin-left: 0; }
+.jetpack-features li { padding: 5px 0; }
+.jetpack-features .dashicons { font-size: 16px; width: 16px; height: 16px; margin-right: 5px; }
+.jetpack-cdn { list-style: none; margin-left: 0; }
+.jetpack-cdn li { padding: 3px 0; }
+.jetpack-cdn code { background: #f0f0f1; padding: 2px 6px; border-radius: 3px; }
+.jetpack-conflict { border-radius: 4px; }
+.jetpack-conflict .dashicons { font-size: 16px; width: 16px; height: 16px; vertical-align: middle; }

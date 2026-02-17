@@ -44,7 +44,7 @@ class Image_Optimizer {
             return;
         }
         $mime = get_post_mime_type( $post_id );
-        if ( strpos( $mime, 'image/' ) !== 0 ) {
+        if ( ! $mime || strpos( $mime, 'image/' ) !== 0 ) {
             return;
         }
         $this->optimize_file( $file );
@@ -86,7 +86,7 @@ class Image_Optimizer {
         $memory_limit_bytes = $this->convert_memory_to_bytes( $memory_limit );
         
         if ( $required_memory > $memory_limit_bytes * 0.7 ) {
-            $this->log( "Skipping large image (${width}x${height}): insufficient memory", 'warning' );
+            $this->log( "Skipping large image ({$width}x{$height}): insufficient memory", 'warning' );
             return false;
         }
         
@@ -157,7 +157,13 @@ class Image_Optimizer {
      * Convert PHP memory limit string to bytes
      */
     private function convert_memory_to_bytes( $value ) {
+        if ( ! $value || $value === '-1' ) {
+            return PHP_INT_MAX; // Unlimited memory
+        }
         $value = trim( $value );
+        if ( empty( $value ) ) {
+            return 128 * 1024 * 1024; // Default 128MB
+        }
         $last = strtolower( $value[ strlen( $value ) - 1 ] );
         $value = (int) $value;
         switch ( $last ) {

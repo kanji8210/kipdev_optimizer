@@ -144,13 +144,65 @@ class Kipdev_Admin {
     protected function render_overview() {
         $last = get_option( 'kipdev_last_scan', false );
         if ( $last ) {
-            echo '<p>' . esc_html__( 'Last scan:', 'kipdev-optimizer' ) . ' ' . esc_html( date_i18n( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ), $last['timestamp'] ) ) . '</p>';
+            echo '<h4>' . esc_html__( 'Last Performance Scan', 'kipdev-optimizer' ) . '</h4>';
+            echo '<p>' . esc_html__( 'Scanned:', 'kipdev-optimizer' ) . ' ' . esc_html( date_i18n( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ), $last['timestamp'] ) ) . '</p>';
             echo '<ul>';
-            echo '<li>' . esc_html__( 'Page load time (s):', 'kipdev-optimizer' ) . ' ' . esc_html( $last['load_time'] ) . '</li>';
-            echo '<li>' . esc_html__( 'Images optimized:', 'kipdev-optimizer' ) . ' ' . esc_html( intval( $last['images'] ) ) . '</li>';
+            echo '<li>' . esc_html__( 'Page load time (s):', 'kipdev-optimizer' ) . ' <strong>' . esc_html( $last['load_time'] ) . '</strong></li>';
+            echo '<li>' . esc_html__( 'Images optimized:', 'kipdev-optimizer' ) . ' <strong>' . esc_html( intval( $last['images'] ) ) . '</strong></li>';
             echo '</ul>';
         } else {
+            echo '<h4>' . esc_html__( 'Performance Scan', 'kipdev-optimizer' ) . '</h4>';
             echo '<p>' . esc_html__( 'No scans yet. Run a scan to collect metrics.', 'kipdev-optimizer' ) . '</p>';
+        }
+        
+        // Display Jetpack status
+        $jetpack = \Kipdev\Optimizer\Helpers\get_jetpack_status();
+        echo '<hr style="margin: 20px 0;">';
+        echo '<h4>' . esc_html__( 'Jetpack Integration Status', 'kipdev-optimizer' ) . '</h4>';
+        
+        if ( $jetpack['active'] ) {
+            echo '<p style="color: #00a32a;">✅ <strong>' . esc_html__( 'Jetpack is active', 'kipdev-optimizer' ) . '</strong>';
+            if ( $jetpack['version'] ) {
+                echo ' (v' . esc_html( $jetpack['version'] ) . ')';
+            }
+            echo '</p>';
+            
+            // Show active features
+            if ( ! empty( $jetpack['features'] ) ) {
+                echo '<h5>' . esc_html__( 'Active Jetpack Features:', 'kipdev-optimizer' ) . '</h5>';
+                echo '<ul class="jetpack-features">';
+                foreach ( $jetpack['features'] as $module => $label ) {
+                    echo '<li><span class="dashicons dashicons-yes-alt" style="color: #00a32a;"></span> ' . esc_html( $label ) . '</li>';
+                }
+                echo '</ul>';
+            }
+            
+            // Show CDN domains
+            if ( ! empty( $jetpack['cdn_domains'] ) ) {
+                echo '<h5>' . esc_html__( 'CDN Domains in Use:', 'kipdev-optimizer' ) . '</h5>';
+                echo '<ul class="jetpack-cdn">';
+                foreach ( $jetpack['cdn_domains'] as $domain ) {
+                    echo '<li><code>' . esc_html( $domain ) . '</code></li>';
+                }
+                echo '</ul>';
+            }
+            
+            // Show conflicts/recommendations
+            $conflicts = \Kipdev\Optimizer\Helpers\get_jetpack_conflicts();
+            if ( ! empty( $conflicts ) ) {
+                echo '<h5>' . esc_html__( 'Integration Notes:', 'kipdev-optimizer' ) . '</h5>';
+                foreach ( $conflicts as $conflict ) {
+                    $color = ( $conflict['type'] === 'warning' ) ? '#dba617' : '#2271b1';
+                    $icon = ( $conflict['type'] === 'warning' ) ? 'warning' : 'info';
+                    echo '<div class="jetpack-conflict" style="background: #f0f0f1; padding: 10px; margin: 10px 0; border-left: 4px solid ' . esc_attr( $color ) . ';">';
+                    echo '<p style="margin: 0 0 5px 0;"><span class="dashicons dashicons-' . esc_attr( $icon ) . '" style="color: ' . esc_attr( $color ) . ';"></span> <strong>' . esc_html( $conflict['feature'] ) . ':</strong> ' . esc_html( $conflict['message'] ) . '</p>';
+                    echo '<p style="margin: 5px 0 0 24px; font-size: 12px; color: #666;">' . esc_html( $conflict['recommendation'] ) . '</p>';
+                    echo '</div>';
+                }
+            }
+            
+        } else {
+            echo '<p style="color: #666;">ℹ️ ' . esc_html__( 'Jetpack is not active. All KipDev optimization features are fully enabled.', 'kipdev-optimizer' ) . '</p>';
         }
     }
 
