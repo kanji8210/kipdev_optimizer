@@ -34,9 +34,13 @@ class Video_Processor {
         $this->log( "Video detected: $file (processing not yet implemented)" );
     }
 
-    protected function log( $msg ) {
+    protected function log( $msg, $level = 'info' ) {
         $log = get_option( 'kipdev_opt_log', array() );
-        $log[] = '[' . date_i18n( 'Y-m-d H:i:s' ) . '] ' . $msg;
+        $log[] = array(
+            'time' => time(),
+            'level' => $level,
+            'message' => $msg,
+        );
         if ( count( $log ) > 200 ) {
             $log = array_slice( $log, -200 );
         }

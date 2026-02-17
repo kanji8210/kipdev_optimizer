@@ -73,11 +73,52 @@ class Kipdev_Admin {
                     <table class="form-table">
                         <tr>
                             <th><label for="image_quality"><?php esc_html_e( 'Image quality (JPEG)', 'kipdev-optimizer' ); ?></label></th>
-                            <td><input type="number" id="image_quality" name="image_quality" value="<?php echo esc_attr( $opts['image_quality'] ); ?>" min="10" max="100"></td>
+                            <td>
+                                <input type="number" id="image_quality" name="image_quality" value="<?php echo esc_attr( $opts['image_quality'] ); ?>" min="10" max="100">
+                                <p class="description"><?php esc_html_e( 'Quality for JPEG compression (10-100, recommended: 82)', 'kipdev-optimizer' ); ?></p>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th><?php esc_html_e( 'Generate WebP images', 'kipdev-optimizer' ); ?></th>
+                            <td>
+                                <input type="checkbox" name="generate_webp" value="1" <?php checked( $opts['generate_webp'], 1 ); ?>>
+                                <p class="description"><?php esc_html_e( 'Create WebP versions of images (30% smaller than JPEG)', 'kipdev-optimizer' ); ?></p>
+                            </td>
                         </tr>
                         <tr>
                             <th><?php esc_html_e( 'Minify HTML output', 'kipdev-optimizer' ); ?></th>
-                            <td><input type="checkbox" name="minify_html" value="1" <?php checked( $opts['minify_html'], 1 ); ?>></td>
+                            <td>
+                                <input type="checkbox" name="minify_html" value="1" <?php checked( $opts['minify_html'], 1 ); ?>>
+                                <p class="description"><?php esc_html_e( 'Remove whitespace and comments from HTML', 'kipdev-optimizer' ); ?></p>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th><?php esc_html_e( 'Enable lazy loading', 'kipdev-optimizer' ); ?></th>
+                            <td>
+                                <input type="checkbox" name="enable_lazy_loading" value="1" <?php checked( $opts['enable_lazy_loading'], 1 ); ?>>
+                                <p class="description"><?php esc_html_e( 'Lazy load images (auto-disabled if Jetpack lazy loading is active)', 'kipdev-optimizer' ); ?></p>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th><?php esc_html_e( 'Defer JavaScript', 'kipdev-optimizer' ); ?></th>
+                            <td>
+                                <input type="checkbox" name="defer_js" value="1" <?php checked( $opts['defer_js'], 1 ); ?>>
+                                <p class="description"><?php esc_html_e( 'Defer non-critical JavaScript loading', 'kipdev-optimizer' ); ?></p>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th><?php esc_html_e( 'Enable page caching', 'kipdev-optimizer' ); ?></th>
+                            <td>
+                                <input type="checkbox" name="enable_page_cache" value="1" <?php checked( $opts['enable_page_cache'], 1 ); ?>>
+                                <p class="description"><?php esc_html_e( 'Cache full pages for faster loading (not for logged-in users)', 'kipdev-optimizer' ); ?></p>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th><?php esc_html_e( 'Jetpack compatibility', 'kipdev-optimizer' ); ?></th>
+                            <td>
+                                <input type="checkbox" name="jetpack_compatibility" value="1" <?php checked( $opts['jetpack_compatibility'], 1 ); ?>>
+                                <p class="description"><?php esc_html_e( 'Auto-detect Jetpack and defer to its optimization features', 'kipdev-optimizer' ); ?></p>
+                            </td>
                         </tr>
                     </table>
                     <p class="submit"><button class="button button-primary" type="submit"><?php esc_html_e( 'Save settings', 'kipdev-optimizer' ); ?></button></p>
@@ -86,6 +127,7 @@ class Kipdev_Admin {
                 <p>
                     <button id="kipdev-run-scan" class="button"><?php esc_html_e( 'Run Performance Scan', 'kipdev-optimizer' ); ?></button>
                     <button id="kipdev-clear-cache" class="button"><?php esc_html_e( 'Clear Plugin Cache', 'kipdev-optimizer' ); ?></button>
+                    <button id="kipdev-optimize-db" class="button"><?php esc_html_e( 'Optimize Database', 'kipdev-optimizer' ); ?></button>
                 </p>
             </div>
 
@@ -120,7 +162,16 @@ class Kipdev_Admin {
         }
         echo '<ul class="kipdev-results-list">';
         foreach ( array_reverse( $log ) as $entry ) {
-            echo '<li>' . esc_html( $entry ) . '</li>';
+            // Handle both old string format and new array format
+            if ( is_array( $entry ) ) {
+                $time = date_i18n( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ), $entry['time'] );
+                $level = isset( $entry['level'] ) ? $entry['level'] : 'info';
+                $level_class = 'log-' . esc_attr( $level );
+                echo '<li class="' . $level_class . '"><strong>[' . esc_html( $time ) . ']</strong> <span class="level-' . esc_attr( $level ) . '">' . ucfirst( esc_html( $level ) ) . ':</span> ' . esc_html( $entry['message'] ) . '</li>';
+            } else {
+                // Old format - just plain string
+                echo '<li>' . esc_html( $entry ) . '</li>';
+            }
         }
         echo '</ul>';
     }
@@ -138,6 +189,10 @@ class Kipdev_Admin {
         if ( 'clear_cache' === $action ) {
             \Kipdev\Optimizer\Cache_Manager::clear_all();
             wp_send_json_success( array( 'cleared' => true ) );
+        }
+        if ( 'optimize_db' === $action ) {
+            $res = \Kipdev\Optimizer\Cache_Manager::optimize_database();
+            wp_send_json_success( $res );
         }
         wp_send_json_error( 'unknown' );
     }

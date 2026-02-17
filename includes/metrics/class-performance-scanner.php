@@ -47,7 +47,11 @@ class Performance_Scanner {
         update_option( 'kipdev_last_scan', $data );
         // add to log
         $log = get_option( 'kipdev_opt_log', array() );
-        $log[] = '[' . date_i18n( 'Y-m-d H:i:s' ) . '] Scan: ' . $load . 's';
+        $log[] = array(
+            'time' => time(),
+            'level' => 'info',
+            'message' => 'Performance scan: ' . $load . 's',
+        );
         if ( count( $log ) > 200 ) {
             $log = array_slice( $log, -200 );
         }

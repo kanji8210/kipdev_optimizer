@@ -2,3 +2,10 @@
 .kipdev-admin-wrap { padding: 20px; max-width:1100px; }
 .kipdev-tab-panel { margin-top: 20px; }
 .kipdev-results-list { list-style: disc; margin-left: 20px; }
+.kipdev-results-list li { padding: 5px 0; }
+.kipdev-results-list .log-error { color: #d63638; font-weight: 500; }
+.kipdev-results-list .log-warning { color: #dba617; }
+.kipdev-results-list .log-info { color: #2271b1; }
+.kipdev-results-list .level-error { background: #d63638; color: white; padding: 2px 6px; border-radius: 3px; font-size: 11px; }
+.kipdev-results-list .level-warning { background: #dba617; color: white; padding: 2px 6px; border-radius: 3px; font-size: 11px; }
+.kipdev-results-list .level-info { background: #2271b1; color: white; padding: 2px 6px; border-radius: 3px; font-size: 11px; }

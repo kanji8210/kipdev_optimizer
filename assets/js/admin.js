@@ -39,6 +39,22 @@
                 }
             });
         });
+        
+        $('#kipdev-optimize-db').on('click', function(e){
+            e.preventDefault();
+            if (!confirm('Optimize database? This will clean up revisions, transients, and orphaned data.')) return;
+            var btn = $(this);
+            btn.prop('disabled', true).text('Optimizing...');
+            $.post(KIPDEV_OPT.ajax_url, { action: 'kipdev_opt_action', nonce: KIPDEV_OPT.nonce, do: 'optimize_db' }, function(r){
+                btn.prop('disabled', false).text('Optimize Database');
+                if ( r.success ) {
+                    alert(r.data.message || 'Database optimized successfully');
+                    location.reload();
+                } else {
+                    alert('Failed to optimize database');
+                }
+            });
+        });
 
         $('#kipdev-options-form').on('submit', function(e){
             // simple post via fetch to same page — degrade to normal submit
