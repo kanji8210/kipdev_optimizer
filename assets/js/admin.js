@@ -75,5 +75,205 @@
             // simple post via fetch to same page — degrade to normal submit
             // handle via normal POST to update options on server if implemented
         });
+        
+        // ===== IMAGE CONVERTER FUNCTIONALITY =====
+        var currentImages = [];
+        var selectedImages = [];
+        
+        // Load PNG images
+        $('#kipdev-load-images').on('click', function(e){
+            e.preventDefault();
+            var btn = $(this);
+            btn.prop('disabled', true).text('Loading...');
+            $('#conversion-status').text('');
+            
+            $.post(KIPDEV_OPT.ajax_url, { 
+                action: 'kipdev_opt_action', 
+                nonce: KIPDEV_OPT.nonce, 
+                do: 'load_png_images' 
+            }, function(r){
+                btn.prop('disabled', false).text('Reload PNG Images');
+                
+                if ( r.success ) {
+                    currentImages = r.data.images;
+                    renderImageGrid(currentImages);
+                    $('#kipdev-convert-selected').show();
+                    $('#kipdev-convert-all').show();
+                    $('#conversion-status').html('<span style="color: #00a32a;">✓</span> Found ' + r.data.total + ' PNG images');
+                } else {
+                    alert('Failed to load images');
+                }
+            });
+        });
+        
+        // Render image grid
+        function renderImageGrid(images) {
+            var html = '';
+            
+            if (images.length === 0) {
+                html = '<p style="color: #666; font-style: italic;">No PNG images found in your media library.</p>';
+            } else {
+                html = '<div class="image-grid">';
+                
+                images.forEach(function(img) {
+                    var statusClass = img.has_webp ? 'has-webp' : 'no-webp';
+                    var statusIcon = img.has_webp ? '✓' : '○';
+                    var statusText = img.has_webp ? 'WebP: ' + img.webp_size : 'No WebP';
+                    var savingsText = img.has_webp ? ' (Saved ' + img.savings + '%)' : '';
+                    
+                    html += '<div class="image-item ' + statusClass + '" data-id="' + img.id + '">';
+                    html += '  <div class="image-checkbox">';
+                    html += '    <input type="checkbox" class="image-select" data-id="' + img.id + '" ' + (img.has_webp ? '' : 'checked') + '>';
+                    html += '  </div>';
+                    html += '  <div class="image-preview">';
+                    html += '    <img src="' + (img.thumb || img.url) + '" alt="' + img.title + '">';
+                    html += '  </div>';
+                    html += '  <div class="image-info">';
+                    html += '    <div class="image-title">' + img.title + '</div>';
+                    html += '    <div class="image-meta">PNG: ' + img.file_size + '</div>';
+                    html += '    <div class="image-status ' + statusClass + '">' + statusIcon + ' ' + statusText + savingsText + '</div>';
+                    html += '    <div class="image-date">' + img.date + '</div>';
+                    html += '  </div>';
+                    html += '  <div class="image-convert-status" id="status-' + img.id + '" style="display:none;"></div>';
+                    html += '</div>';
+                });
+                
+                html += '</div>';
+            }
+            
+            $('#images-container').html(html);
+            
+            // Handle checkbox changes
+            $('.image-select').on('change', function(){
+                updateSelectedImages();
+            });
+            
+            updateSelectedImages();
+        }
+        
+        // Update selected images list
+        function updateSelectedImages() {
+            selectedImages = [];
+            $('.image-select:checked').each(function(){
+                selectedImages.push(parseInt($(this).data('id')));
+            });
+            
+            var btnText = selectedImages.length > 0 ? 
+                'Convert Selected (' + selectedImages.length + ')' : 
+                'Convert Selected';
+            $('#kipdev-convert-selected').text(btnText);
+        }
+        
+        // Convert selected images
+        $('#kipdev-convert-selected').on('click', function(e){
+            e.preventDefault();
+            
+            if (selectedImages.length === 0) {
+                alert('Please select at least one image to convert.');
+                return;
+            }
+            
+            if (!confirm('Convert ' + selectedImages.length + ' selected PNG image(s) to WebP?')) {
+                return;
+            }
+            
+            convertImages(selectedImages);
+        });
+        
+        // Convert all images
+        $('#kipdev-convert-all').on('click', function(e){
+            e.preventDefault();
+            
+            var allIds = currentImages.filter(img => !img.has_webp).map(img => img.id);
+            
+            if (allIds.length === 0) {
+                alert('All PNG images already have WebP versions!');
+                return;
+            }
+            
+            if (!confirm('Convert all ' + allIds.length + ' PNG images to WebP?')) {
+                return;
+            }
+            
+            convertImages(allIds);
+        });
+        
+        // Convert images with progress animation
+        function convertImages(imageIds) {
+            var total = imageIds.length;
+            var completed = 0;
+            var successful = 0;
+            var skipped = 0;
+            var failed = 0;
+            
+            // Disable buttons
+            $('#kipdev-load-images, #kipdev-convert-selected, #kipdev-convert-all').prop('disabled', true);
+            
+            // Show progress bar
+            $('#conversion-progress').show();
+            $('#conversion-progress-bar').css('width', '0%');
+            $('#conversion-progress-text').text('Converting 0 of ' + total + ' images...');
+            
+            // Process images one by one
+            function processNext(index) {
+                if (index >= imageIds.length) {
+                    // All done!
+                    $('#conversion-progress-bar').css('width', '100%');
+                    $('#conversion-progress-text').html(
+                        '<strong>Complete!</strong> ✓ ' + successful + ' converted, ' + 
+                        skipped + ' skipped, ' + 
+                        (failed > 0 ? '✗ ' + failed + ' failed' : '')
+                    );
+                    
+                    $('#kipdev-load-images, #kipdev-convert-selected, #kipdev-convert-all').prop('disabled', false);
+                    
+                    // Reload images after 2 seconds
+                    setTimeout(function(){
+                        $('#kipdev-load-images').click();
+                        $('#conversion-progress').fadeOut();
+                    }, 2000);
+                    
+                    return;
+                }
+                
+                var imageId = imageIds[index];
+                var $statusDiv = $('#status-' + imageId);
+                $statusDiv.show().html('<div class="converting-spinner">⟳ Converting...</div>');
+                
+                $.post(KIPDEV_OPT.ajax_url, {
+                    action: 'kipdev_opt_action',
+                    nonce: KIPDEV_OPT.nonce,
+                    do: 'convert_to_webp',
+                    attachment_id: imageId
+                }, function(r){
+                    completed++;
+                    var progress = Math.round((completed / total) * 100);
+                    
+                    $('#conversion-progress-bar').css('width', progress + '%');
+                    $('#conversion-progress-text').text('Converting ' + completed + ' of ' + total + ' images... (' + progress + '%)');
+                    
+                    if (r.success) {
+                        if (r.data.already_exists) {
+                            skipped++;
+                            $statusDiv.html('<div class="convert-skipped">✓ Already exists</div>');
+                        } else {
+                            successful++;
+                            $statusDiv.html('<div class="convert-success">✓ Saved ' + r.data.savings + '%</div>');
+                        }
+                    } else {
+                        failed++;
+                        $statusDiv.html('<div class="convert-failed">✗ Failed</div>');
+                    }
+                    
+                    // Process next image
+                    setTimeout(function(){
+                        processNext(index + 1);
+                    }, 200); // Small delay for visual effect
+                });
+            }
+            
+            // Start processing
+            processNext(0);
+        }
     });
 })(jQuery);

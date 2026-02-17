@@ -56,6 +56,7 @@ class Kipdev_Admin {
             <h2 class="nav-tab-wrapper">
                 <a class="nav-tab nav-tab-active" href="#overview"><?php esc_html_e( 'Performance Overview', 'kipdev-optimizer' ); ?></a>
                 <a class="nav-tab" href="#controls"><?php esc_html_e( 'Optimization Controls', 'kipdev-optimizer' ); ?></a>
+                <a class="nav-tab" href="#converter"><?php esc_html_e( 'Image Converter', 'kipdev-optimizer' ); ?></a>
                 <a class="nav-tab" href="#results"><?php esc_html_e( 'Results Dashboard', 'kipdev-optimizer' ); ?></a>
             </h2>
 
@@ -129,6 +130,29 @@ class Kipdev_Admin {
                     <button id="kipdev-clear-cache" class="button"><?php esc_html_e( 'Clear Plugin Cache', 'kipdev-optimizer' ); ?></button>
                     <button id="kipdev-optimize-db" class="button"><?php esc_html_e( 'Optimize Database', 'kipdev-optimizer' ); ?></button>
                 </p>
+            </div>
+
+            <div id="converter" class="kipdev-tab-panel" style="display:none">
+                <h3><?php esc_html_e( 'PNG to WebP Converter', 'kipdev-optimizer' ); ?></h3>
+                <p><?php esc_html_e( 'Convert your PNG images to WebP format for better performance. WebP images are 30-40% smaller while maintaining quality and transparency.', 'kipdev-optimizer' ); ?></p>
+                
+                <div class="converter-actions">
+                    <button id="kipdev-load-images" class="button button-primary"><?php esc_html_e( 'Load PNG Images', 'kipdev-optimizer' ); ?></button>
+                    <button id="kipdev-convert-selected" class="button button-secondary" style="display:none;"><?php esc_html_e( 'Convert Selected to WebP', 'kipdev-optimizer' ); ?></button>
+                    <button id="kipdev-convert-all" class="button button-secondary" style="display:none;"><?php esc_html_e( 'Convert All to WebP', 'kipdev-optimizer' ); ?></button>
+                    <span id="conversion-status" style="margin-left: 15px; font-weight: 500;"></span>
+                </div>
+                
+                <div id="conversion-progress" style="display:none; margin: 20px 0;">
+                    <div class="progress-bar large">
+                        <div id="conversion-progress-bar" class="progress-fill" style="width: 0%; background-color: #2271b1;"></div>
+                    </div>
+                    <p id="conversion-progress-text" style="margin-top: 10px; text-align: center; color: #666;"></p>
+                </div>
+                
+                <div id="images-container" style="margin-top: 20px;">
+                    <p style="color: #666; font-style: italic;"><?php esc_html_e( 'Click "Load PNG Images" to see available images.', 'kipdev-optimizer' ); ?></p>
+                </div>
             </div>
 
             <div id="results" class="kipdev-tab-panel" style="display:none">
@@ -292,6 +316,18 @@ class Kipdev_Admin {
             $res = \Kipdev\Optimizer\Cache_Manager::optimize_database();
             wp_send_json_success( $res );
         }
+        if ( 'load_png_images' === $action ) {
+            $images = $this->get_png_images();
+            wp_send_json_success( $images );
+        }
+        if ( 'convert_to_webp' === $action ) {
+            $attachment_id = isset( $_POST['attachment_id'] ) ? intval( $_POST['attachment_id'] ) : 0;
+            if ( ! $attachment_id ) {
+                wp_send_json_error( 'invalid-id' );
+            }
+            $result = $this->convert_image_to_webp( $attachment_id );
+            wp_send_json_success( $result );
+        }
         wp_send_json_error( 'unknown' );
     }
 
@@ -371,5 +407,130 @@ class Kipdev_Admin {
             wp_cache_set( 'kipdev_total_images', $count, 'kipdev_optimizer', HOUR_IN_SECONDS );
         }
         return $count;
+    }
+    
+    /**
+     * Get all PNG images from media library
+     */
+    private function get_png_images() {
+        global $wpdb;
+        
+        $query = "SELECT ID, post_title, post_date 
+                  FROM {$wpdb->posts} 
+                  WHERE post_type = 'attachment' 
+                  AND post_mime_type = 'image/png' 
+                  ORDER BY post_date DESC 
+                  LIMIT 100";
+        
+        $attachments = $wpdb->get_results( $query );
+        $images = array();
+        
+        foreach ( $attachments as $attachment ) {
+            $file = get_attached_file( $attachment->ID );
+            if ( ! $file || ! file_exists( $file ) ) {
+                continue;
+            }
+            
+            $file_size = filesize( $file );
+            $webp_file = preg_replace( '/\.png$/i', '.webp', $file );
+            $has_webp = file_exists( $webp_file );
+            $webp_size = $has_webp ? filesize( $webp_file ) : 0;
+            
+            $images[] = array(
+                'id' => $attachment->ID,
+                'title' => $attachment->post_title ? $attachment->post_title : basename( $file ),
+                'url' => wp_get_attachment_url( $attachment->ID ),
+                'thumb' => wp_get_attachment_image_url( $attachment->ID, 'thumbnail' ),
+                'file_size' => size_format( $file_size, 2 ),
+                'file_size_bytes' => $file_size,
+                'has_webp' => $has_webp,
+                'webp_size' => $has_webp ? size_format( $webp_size, 2 ) : '',
+                'webp_size_bytes' => $webp_size,
+                'savings' => $has_webp ? round( ( ( $file_size - $webp_size ) / $file_size ) * 100 ) : 0,
+                'date' => date_i18n( get_option( 'date_format' ), strtotime( $attachment->post_date ) ),
+            );
+        }
+        
+        return array(
+            'images' => $images,
+            'total' => count( $images ),
+        );
+    }
+    
+    /**
+     * Convert a single image to WebP
+     */
+    private function convert_image_to_webp( $attachment_id ) {
+        $file = get_attached_file( $attachment_id );
+        
+        if ( ! $file || ! file_exists( $file ) ) {
+            return array(
+                'success' => false,
+                'message' => 'File not found',
+            );
+        }
+        
+        $mime = get_post_mime_type( $attachment_id );
+        if ( $mime !== 'image/png' ) {
+            return array(
+                'success' => false,
+                'message' => 'Not a PNG file',
+            );
+        }
+        
+        // Check if WebP already exists
+        $webp_file = preg_replace( '/\.png$/i', '.webp', $file );
+        if ( file_exists( $webp_file ) ) {
+            $original_size = filesize( $file );
+            $webp_size = filesize( $webp_file );
+            return array(
+                'success' => true,
+                'message' => 'WebP already exists',
+                'already_exists' => true,
+                'webp_size' => size_format( $webp_size, 2 ),
+                'savings' => round( ( ( $original_size - $webp_size ) / $original_size ) * 100 ),
+            );
+        }
+        
+        // Load image
+        $img = @imagecreatefrompng( $file );
+        if ( ! $img ) {
+            return array(
+                'success' => false,
+                'message' => 'Failed to load PNG',
+            );
+        }
+        
+        // Preserve transparency
+        imagealphablending( $img, false );
+        imagesavealpha( $img, true );
+        
+        // Get quality setting
+        $opts = \Kipdev\Optimizer\Helpers\get_options();
+        $quality = isset( $opts['image_quality'] ) ? intval( $opts['image_quality'] ) : 82;
+        
+        // Generate WebP
+        $result = @imagewebp( $img, $webp_file, $quality );
+        imagedestroy( $img );
+        
+        if ( ! $result ) {
+            return array(
+                'success' => false,
+                'message' => 'Failed to generate WebP',
+            );
+        }
+        
+        // Calculate savings
+        $original_size = filesize( $file );
+        $webp_size = filesize( $webp_file );
+        $savings = round( ( ( $original_size - $webp_size ) / $original_size ) * 100 );
+        
+        return array(
+            'success' => true,
+            'message' => 'Converted successfully',
+            'webp_size' => size_format( $webp_size, 2 ),
+            'webp_size_bytes' => $webp_size,
+            'savings' => $savings,
+        );
     }
 }
