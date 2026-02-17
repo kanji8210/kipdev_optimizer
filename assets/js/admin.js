@@ -96,12 +96,32 @@
                 
                 if ( r.success ) {
                     currentImages = r.data.images;
+                    var needsConversion = currentImages.filter(img => !img.has_webp).length;
+                    
                     renderImageGrid(currentImages);
-                    $('#kipdev-convert-selected').show();
-                    $('#kipdev-convert-all').show();
-                    $('#conversion-status').html('<span style="color: #00a32a;">✓</span> Found ' + r.data.total + ' PNG images');
+                    
+                    if (currentImages.length === 0) {
+                        $('#kipdev-convert-selected').hide();
+                        $('#kipdev-convert-all').hide();
+                        $('#conversion-status').html('<div class="no-images-notice">📁 No PNG images found in your media library.</div>');
+                    } else {
+                        $('#kipdev-convert-selected').show();
+                        $('#kipdev-convert-all').show();
+                        
+                        var statusHtml = '<div class="images-found-notice">';
+                        statusHtml += '<strong>Found ' + r.data.total + ' PNG image' + (r.data.total !== 1 ? 's' : '') + '</strong>';
+                        
+                        if (needsConversion > 0) {
+                            statusHtml += ' • <span class="needs-conversion">' + needsConversion + ' need' + (needsConversion !== 1 ? '' : 's') + ' WebP conversion</span>';
+                        } else {
+                            statusHtml += ' • <span class="all-converted">✓ All have WebP versions!</span>';
+                        }
+                        
+                        statusHtml += '</div>';
+                        $('#conversion-status').html(statusHtml);
+                    }
                 } else {
-                    alert('Failed to load images');
+                    $('#conversion-status').html('<div class="error-notice">✗ Failed to load images</div>');
                 }
             });
         });
@@ -111,7 +131,12 @@
             var html = '';
             
             if (images.length === 0) {
-                html = '<p style="color: #666; font-style: italic;">No PNG images found in your media library.</p>';
+                html = '<div class="empty-state">';
+                html += '  <div class="empty-icon">🖼️</div>';
+                html += '  <h3>No PNG Images Found</h3>';
+                html += '  <p>Your media library doesn\'t contain any PNG images yet.</p>';
+                html += '  <p class="empty-hint">Upload some PNG images to start converting them to WebP format!</p>';
+                html += '</div>';
             } else {
                 html = '<div class="image-grid">';
                 
