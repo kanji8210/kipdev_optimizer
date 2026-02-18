@@ -321,12 +321,23 @@ class Advanced_Video_Embed {
                  <?php if ( ! empty( $wrapper_styles ) ) : ?>
                  style="<?php echo esc_attr( implode( '; ', $wrapper_styles ) ); ?>"
                  <?php endif; ?>>
-                <iframe class="kipdev-video-iframe"
+                <?php if ( isset( $atts['autoplay'] ) && $atts['autoplay'] === 'yes' ) : ?>
+                    <iframe class="kipdev-video-iframe"
                         src="<?php echo esc_url( $embed_url ); ?>"
                         frameborder="0"
                         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                         allowfullscreen>
-                </iframe>
+                    </iframe>
+                <?php else : ?>
+                    <iframe class="kipdev-video-iframe kipdev-lazy-iframe"
+                        src="about:blank"
+                        data-src="<?php echo esc_url( $embed_url ); ?>"
+                        loading="lazy"
+                        frameborder="0"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        allowfullscreen>
+                    </iframe>
+                <?php endif; ?>
             </div>
         </div>
         <?php
@@ -346,6 +357,8 @@ class Advanced_Video_Embed {
             $base_url = "https://www.{$domain}/embed/{$video_id}";
             
             // YouTube parameters
+            // Add playsinline to help mobile autoplay
+            $params['playsinline'] = '1';
             if ( $atts['autoplay'] === 'yes' ) {
                 $params['autoplay'] = '1';
             }
@@ -367,6 +380,8 @@ class Advanced_Video_Embed {
             $base_url = "https://player.vimeo.com/video/{$video_id}";
             
             // Vimeo parameters
+            // Add playsinline to help mobile autoplay
+            $params['playsinline'] = '1';
             if ( $atts['autoplay'] === 'yes' ) {
                 $params['autoplay'] = '1';
             }
@@ -398,6 +413,15 @@ class Advanced_Video_Embed {
             KIPDEV_OPT_PLUGIN_URL . 'assets/css/video-embed.css', 
             array(), 
             '0.2.2' 
+        );
+
+        // Lazy media loader for iframes, video and audio
+        wp_enqueue_script(
+            'kipdev-lazy-media',
+            KIPDEV_OPT_PLUGIN_URL . 'assets/js/lazy-media.js',
+            array(),
+            '0.1.0',
+            true
         );
     }
 }
